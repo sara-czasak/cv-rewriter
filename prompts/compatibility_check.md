@@ -18,8 +18,8 @@ Evaluate three dimensions, each scored 0-100:
 3. TRANSFERABLE EXPERIENCE: does the candidate's background (even from
    a different field) demonstrate relevant capability for this role?
 
-Respond in this exact format:
-HARD_REQUIREMENTS: [0-100]
-NICE_TO_HAVES: [0-100]
-TRANSFERABLE: [0-100]
-REASONING: [2-3 sentence explanation]
+Respond in this exact format (numbers only, no brackets):
+HARD_REQUIREMENTS: <a number from 0 to 100>
+NICE_TO_HAVES: <a number from 0 to 100>
+TRANSFERABLE: <a number from 0 to 100>
+REASONING: <2-3 sentence explanation>
