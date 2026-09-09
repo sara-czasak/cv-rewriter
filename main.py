@@ -7,8 +7,8 @@ import os
 from dotenv import load_dotenv
 import steps.compatibility_check as cc
 from utils.extract_text import extract_text
-import steps.rewrite_cv as rw
 import steps.inner_reviewer as ir
+from utils.save_cv_pdf import save_cv_as_pdf
 
 
 load_dotenv()
@@ -91,3 +91,8 @@ if result["status"] == "approved":
 else:
     print(f"Needs manual review: {result['reason']}")
     print(result["cv"])
+
+
+if result["status"] == "approved":
+    pdf_path = save_cv_as_pdf(result["cv"], job_posting_text)
+    print(f"Saved to: {pdf_path}")
