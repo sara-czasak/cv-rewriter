@@ -81,13 +81,13 @@ print(f"Reasoning: {result['reasoning']}")
 print(f"Decision: {result['decision']}")
 
 
-rewritten_cv = rw.rewrite_cv(flash, job_posting_text, base_cv_text)
-print(rewritten_cv)
+initial_score = result["final_score"]
 
-result = ir.run_review(flash, flash_lite, job_posting_text, base_cv_text,
-                        rewritten_cv, result["final_score"])  # initial_score from your compatibility check
+result = ir.run_review(flash, flash_lite, job_posting_text, base_cv_text, initial_score)
 
 if result["status"] == "approved":
     print("Passed")
+    print(result["cv"])
 else:
     print(f"Needs manual review: {result['reason']}")
+    print(result["cv"])
