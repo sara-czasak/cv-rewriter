@@ -8,6 +8,7 @@ from dotenv import load_dotenv
 import steps.compatibility_check as cc
 from utils.extract_text import extract_text
 import steps.rewrite_cv as rw
+import steps.inner_reviewer as ir
 
 
 load_dotenv()
@@ -82,3 +83,11 @@ print(f"Decision: {result['decision']}")
 
 rewritten_cv = rw.rewrite_cv(flash, job_posting_text, base_cv_text)
 print(rewritten_cv)
+
+result = ir.run_review(flash, flash_lite, job_posting_text, base_cv_text,
+                        rewritten_cv, result["final_score"])  # initial_score from your compatibility check
+
+if result["status"] == "approved":
+    print("Passed")
+else:
+    print(f"Needs manual review: {result['reason']}")
