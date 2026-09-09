@@ -158,7 +158,7 @@ def render_form(data, errors):
 
     <div id="url_mode" style="display:none;">
         <label>Job Posting URL *</label><br>
-        <input type="url" name="job_url" size="80"><br><br>
+        <input type="url" name="job_url" size="80" value="{data.get("job_url", "")}"><br><br>
     </div>
 
     <div id="upload_mode" style="display:none;">

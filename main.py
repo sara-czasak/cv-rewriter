@@ -3,6 +3,7 @@ import webbrowser
 import html
 import re
 from urllib.request import Request, urlopen
+from urllib.error import HTTPError, URLError
 from tkinter import Tk, filedialog
 import py_simple as ps
 from form.app import app, submitted_event
@@ -11,6 +12,7 @@ from dotenv import load_dotenv
 import steps.compatibility_check as cc
 from utils.extract_text import extract_text
 import steps.normalize_cv as normalize_cv
+import steps.normalize_job as normalize_job
 import steps.inner_reviewer as ir
 from utils.save_cv_pdf import save_cv_as_pdf
 import form.app as form_app
@@ -31,16 +33,41 @@ def fetch_job_posting_text(url):
         headers={"User-Agent": "Mozilla/5.0"},
     )
 
-    with urlopen(request, timeout=20) as response:
-        page_html = response.read().decode("utf-8", errors="ignore")
+    try:
+        with urlopen(request, timeout=20) as response:
+            page_html = response.read().decode("utf-8", errors="ignore")
 
-    page_html = re.sub(r"<script.*?>.*?</script>", " ", page_html, flags=re.S | re.I)
-    page_html = re.sub(r"<style.*?>.*?</style>", " ", page_html, flags=re.S | re.I)
+    except HTTPError as exc:
+        raise RuntimeError(
+            f"Could not open job posting URL. HTTP status: {exc.code}"
+        ) from exc
+
+    except URLError as exc:
+        raise RuntimeError(
+            f"Could not reach job posting URL: {exc.reason}"
+        ) from exc
+
+    page_html = re.sub(
+        r"<script.*?>.*?</script>",
+        " ",
+        page_html,
+        flags=re.S | re.I,
+    )
+    page_html = re.sub(
+        r"<style.*?>.*?</style>",
+        " ",
+        page_html,
+        flags=re.S | re.I,
+    )
     page_text = re.sub(r"<[^>]+>", "\n", page_html)
     page_text = html.unescape(page_text)
     page_text = re.sub(r"\n\s*\n+", "\n\n", page_text)
+    page_text = page_text.strip()
 
-    return page_text.strip()
+    if not page_text:
+        raise RuntimeError("Job posting URL returned no readable text.")
+
+    return page_text
 
 
 server_thread = threading.Thread(target=run_server, daemon=True)
@@ -55,8 +82,12 @@ job_posting_text = form_app.submitted_job_text
 job_posting_url = form_app.submitted_job_url
 applicant_name = form_app.submitted_applicant_name
 
-if job_posting_text:
-    print("Job posting received directly from form.")
+if job_posting_url:
+    print(f"Job posting URL received: {job_posting_url}")
+
+elif job_posting_text:
+    print("Job posting text received directly.")
+
 else:
     print(f"Job posting saved to: {job_posting_path}")
 
@@ -97,8 +128,32 @@ flash = ps.get_model(
 
 if job_posting_url:
     job_posting_text = fetch_job_posting_text(job_posting_url)
+    job_posting_text = normalize_job.normalize_job(
+        flash_lite,
+        job_posting_text,
+    )
 
-elif not job_posting_text:
+    meaningful_job_text = re.sub(
+        r"##\s+[^\n]+\n",
+        "",
+        job_posting_text,
+    ).strip()
+
+    if len(meaningful_job_text) < 200:
+        print(
+            "\nCould not extract enough job information from this URL."
+            "\nSome sites, including LinkedIn, block automated job-page reading."
+            "\nPlease restart the app and use 'Paste Job Description' instead.\n"
+        )
+        raise SystemExit
+
+elif job_posting_text:
+    job_posting_text = normalize_job.normalize_job(
+        flash_lite,
+        job_posting_text,
+    )
+
+else:
     with open(job_posting_path, "r", encoding="utf-8") as f:
         job_posting_text = f.read()
 
@@ -117,10 +172,40 @@ print(f"Compatibility score: {result['final_score']}")
 print(f"Reasoning: {result['reasoning']}")
 print(f"Decision: {result['decision']}")
 
+if result["decision"] == "reject":
+    print("\nThis job does not look compatible with the current CV.")
+    print(f"Reason: {result['reasoning']}")
+
+    try_another = input(
+        "\nWould you like to check against another job? (y/n): "
+    ).strip().lower()
+
+    if try_another in ("y", "yes"):
+        print("Please restart the app to submit another job posting.")
+        raise SystemExit
+
+    print("Stopped.")
+    raise SystemExit
+
+
+if result["decision"] == "ask_user":
+    user_choice = input(
+        "Compatibility is borderline. Do you want to continue? (y/n): "
+    ).strip().lower()
+
+    if user_choice not in ("y", "yes"):
+        print("Stopped by user.")
+        raise SystemExit
 
 initial_score = result["final_score"]
 
-result = ir.run_review(flash, flash_lite, job_posting_text, base_cv_text, initial_score)
+result = ir.run_review(
+    flash,
+    flash_lite,
+    job_posting_text,
+    base_cv_text,
+    initial_score,
+)
 
 if result["status"] == "approved":
     print("Passed")
