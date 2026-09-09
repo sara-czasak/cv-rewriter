@@ -55,7 +55,7 @@ def normalize_cv(model, base_cv_text: str) -> CV:
     with open(PROMPT_PATH, "r", encoding="utf-8") as file:
         template = file.read()
 
-    prompt = template.format(base_cv=base_cv_text)
+    prompt = template.replace("{base_cv}", base_cv_text)
 
     response = ask_ai(model, prompt)
     response = _response_to_text(response)
