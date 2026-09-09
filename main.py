@@ -1,4 +1,7 @@
 import py_simple
+import webbrowser
+import threading
+from form.app import app  # <-- add this
 
 with open(
         "./template/job_description_template.md",
@@ -8,9 +11,6 @@ with open(
     job_description = f.read()
 
 print(job_description)
-
-import webbrowser
-import threading
 
 def open_browser():
     webbrowser.open("http://127.0.0.1:5000")

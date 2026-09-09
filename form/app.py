@@ -38,5 +38,5 @@ def save_to_file(data):
         for key, label, _ in FIELDS:
             f.write(f"## {label}\n{data[key]}\n\n")
 
-if __name__ == "__main__":
-    app.run(debug=True, port=5000)
+# if __name__ == "__main__":
+#     app.run(debug=True, port=5000)
