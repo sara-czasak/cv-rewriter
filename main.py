@@ -53,7 +53,7 @@ else:
 
 # STEP 2: COMPATIBILITY CHECK
 API_KEY = os.getenv("API_KEY")
-with open(job_posting_path, "r", encoding="utf-8") as f:
-    job_posting_text = f.read()
-base_cv_text = base_cv.read()
-cc.load_prompt(job_posting=job_posting_text, base_cv=base_cv_text)
+
+flash_lite = ps.get_model("gemini", "flash-lite")
+
+
