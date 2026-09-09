@@ -9,6 +9,7 @@ import steps.compatibility_check as cc
 from utils.extract_text import extract_text
 import steps.inner_reviewer as ir
 from utils.save_cv_pdf import save_cv_as_pdf
+import form.app as form_app
 
 
 load_dotenv()
@@ -28,9 +29,8 @@ threading.Timer(1, open_browser).start()
 
 submitted_event.wait()
 
-# read the path back off the module now that the event confirms it's set
-import form.app as form_app
 job_posting_path = form_app.submitted_path
+applicant_name = form_app.submitted_applicant_name
 print(f"Job posting saved to: {job_posting_path}")
 
 root = Tk()
@@ -94,5 +94,5 @@ else:
 
 
 if result["status"] == "approved":
-    pdf_path = save_cv_as_pdf(result["cv"], job_posting_text)
+    pdf_path = save_cv_as_pdf(result["cv"], job_posting_text, applicant_name)
     print(f"Saved to: {pdf_path}")

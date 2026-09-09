@@ -21,16 +21,6 @@ def sanitize_filename(text: str) -> str:
     return re.sub(r'[\\/*?:"<>|]', "", text)
 
 
-def parse_applicant_name(cv_text: str) -> str:
-    """Gets the applicant's name from the CV's Contact section (assumed
-    to be the first line under that header)."""
-    contact_section = extract_field(cv_text, "Contact")
-    first_line = contact_section.splitlines()[0] if contact_section else ""
-    if not first_line:
-        raise ValueError("Could not find applicant name in CV Contact section.")
-    return first_line.strip()
-
-
 def parse_company(job_posting_text: str) -> str:
     """Gets the company name from the job posting's Company section."""
     company = extract_field(job_posting_text, "Company")
@@ -39,7 +29,7 @@ def parse_company(job_posting_text: str) -> str:
     return company
 
 
-def save_cv_as_pdf(cv_text: str, job_posting_text: str,
+def save_cv_as_pdf(cv_text: str, job_posting_text: str, applicant_name: str,
                     output_dir: str = "optimized_cv") -> str:
     """
     Converts the rewritten CV (markdown) to a PDF and saves it as
@@ -50,13 +40,15 @@ def save_cv_as_pdf(cv_text: str, job_posting_text: str,
         cv_text (str): The final rewritten CV, in markdown.
         job_posting_text (str): The job posting text (used to pull the
             company name).
+        applicant_name (str): The applicant's name, as entered in the
+            job-posting form. Used only for the output filename.
         output_dir (str): Directory to save the PDF into. Defaults to
             "optimized_cv".
 
     Returns:
         str: The full path to the saved PDF.
     """
-    applicant_name = sanitize_filename(parse_applicant_name(cv_text))
+    applicant_name = sanitize_filename(applicant_name)
     company = sanitize_filename(parse_company(job_posting_text))
 
     os.makedirs(output_dir, exist_ok=True)
