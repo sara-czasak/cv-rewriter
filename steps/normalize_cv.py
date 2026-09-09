@@ -187,4 +187,8 @@ def cv_to_text(cv: CV) -> str:
             for certification in cv.certifications
         )
 
-    return "\n".join(sections).strip()
+    return "\n".join(
+        str(section)
+        for section in sections
+        if section is not None
+    ).strip()
