@@ -1,5 +1,5 @@
 from flask import Flask, request
-
+import py_simple as ps
 app = Flask(__name__)
 
 FIELDS = [
@@ -20,23 +20,48 @@ FIELDS = [
 
 @app.route("/", methods=["GET", "POST"])
 def form():
+    errors = []
+    data = {key: "" for key, _, _ in FIELDS}
+
     if request.method == "POST":
         data = {key: request.form.get(key, "").strip() for key, _, _ in FIELDS}
-        save_to_file(data)
-        return "Saved! You can close this tab."
+        filename = f"{ps.to_snake_case(data['job_title'])}.md"
+        for key, label, required in FIELDS:
+            if required and not data[key]:
+                errors.append(label)
 
-    # build the form HTML
+        if not errors:
+            save_to_file(data, filename)
+            return "Saved! You can close this tab."
+
+    return render_form(data, errors)
+
+
+def render_form(data, errors):
+    error_html = ""
+    if errors:
+        missing = ", ".join(errors)
+        error_html = (
+            f"<p style='color:red;'>Please fill in the following required "
+            f"field(s): {missing}</p>"
+        )
+
     inputs = ""
     for key, label, required in FIELDS:
         inputs += f'<label>{label}{" *" if required else ""}</label><br>'
-        inputs += f'<textarea name="{key}" rows="4" cols="60"></textarea><br><br>'
+        inputs += (
+            f'<textarea name="{key}" rows="4" cols="60">'
+            f'{data.get(key, "")}</textarea><br><br>'
+        )
 
-    return f"<form method='post'>{inputs}<button type='submit'>Save</button></form>"
+    return f"{error_html}<form method='post'>{inputs}<button type='submit'>Save</button></form>"
 
-def save_to_file(data):
-    with open("job_posting.md", "w", encoding="utf-8") as f:
+
+def save_to_file(data, filename):
+    with open(filename, "w", encoding="utf-8") as f:
         for key, label, _ in FIELDS:
             f.write(f"## {label}\n{data[key]}\n\n")
 
-# if __name__ == "__main__":
-#     app.run(debug=True, port=5000)
+
+if __name__ == "__main__":
+    app.run(debug=True, port=5000)
