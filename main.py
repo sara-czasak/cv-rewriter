@@ -7,6 +7,7 @@ import os
 from dotenv import load_dotenv
 import steps.compatibility_check as cc
 from utils.extract_text import extract_text
+import steps.normalize_cv as normalize_cv
 import steps.inner_reviewer as ir
 from utils.save_cv_pdf import save_cv_as_pdf
 import form.app as form_app
@@ -14,7 +15,6 @@ import form.app as form_app
 
 load_dotenv()
 
-# STEP 1: GET NEEDED DATA
 def open_browser():
     webbrowser.open("http://127.0.0.1:5000")
 
@@ -54,7 +54,6 @@ else:
     print("No file selected.")
 
 
-# STEP 2: COMPATIBILITY CHECK
 API_KEY = os.getenv("API_KEY")
 
 flash_lite = ps.get_model(
@@ -71,7 +70,14 @@ flash = ps.get_model(
 
 with open(job_posting_path, "r", encoding="utf-8") as f:
     job_posting_text = f.read()
-base_cv_text = extract_text(base_cv.name)
+
+raw_base_cv_text = extract_text(base_cv.name)
+
+normalized_cv = normalize_cv.normalize_cv(
+    flash_lite,
+    raw_base_cv_text,
+)
+base_cv_text = normalize_cv.cv_to_text(normalized_cv)
 
 
 result = cc.check_compatibility(flash_lite, job_posting_text, base_cv_text)
