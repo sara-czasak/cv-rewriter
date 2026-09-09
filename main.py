@@ -7,6 +7,7 @@ import os
 from dotenv import load_dotenv
 import steps.compatibility_check as cc
 from utils.extract_text import extract_text
+import steps.rewrite_cv as rw
 
 
 load_dotenv()
@@ -61,6 +62,12 @@ flash_lite = ps.get_model(
     api_key=API_KEY
 )
 
+flash = ps.get_model(
+    provider = "google",
+    model_name="gemini-3.5-flash",
+    api_key=API_KEY
+)
+
 with open(job_posting_path, "r", encoding="utf-8") as f:
     job_posting_text = f.read()
 base_cv_text = extract_text(base_cv.name)
@@ -71,3 +78,7 @@ result = cc.check_compatibility(flash_lite, job_posting_text, base_cv_text)
 print(f"Compatibility score: {result['final_score']}")
 print(f"Reasoning: {result['reasoning']}")
 print(f"Decision: {result['decision']}")
+
+
+rewritten_cv = rw.rewrite_cv(flash, job_posting_text, base_cv_text)
+print(rewritten_cv)
