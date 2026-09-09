@@ -6,6 +6,7 @@ from form.app import app, submitted_event
 import os
 from dotenv import load_dotenv
 import steps.compatibility_check as cc
+from utils.extract_text import extract_text
 
 
 load_dotenv()
@@ -54,6 +55,19 @@ else:
 # STEP 2: COMPATIBILITY CHECK
 API_KEY = os.getenv("API_KEY")
 
-flash_lite = ps.get_model("gemini", "flash-lite")
+flash_lite = ps.get_model(
+    provider = "google",
+    model_name = "gemini-3.5-flash-lite",
+    api_key=API_KEY
+)
+
+with open(job_posting_path, "r", encoding="utf-8") as f:
+    job_posting_text = f.read()
+base_cv_text = extract_text(base_cv.name)
 
 
+result = cc.check_compatibility(flash_lite, job_posting_text, base_cv_text)
+
+print(f"Compatibility score: {result['final_score']}")
+print(f"Reasoning: {result['reasoning']}")
+print(f"Decision: {result['decision']}")
