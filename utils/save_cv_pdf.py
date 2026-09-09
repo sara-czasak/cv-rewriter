@@ -56,7 +56,10 @@ def save_cv_as_pdf(cv_text: str, job_posting_text: str, applicant_name: str,
     filename = f"{applicant_name}_cv{company}.pdf"
     output_path = os.path.join(output_dir, filename)
 
-    body_html = markdown.markdown(cv_text)
+    body_html = markdown.markdown(
+        cv_text,
+        extensions=["nl2br"],
+    )
 
     html = f"""
     <html>

@@ -20,7 +20,37 @@ Use this exact structural format:
 
 Candidate Title
 
-Contact details must each appear on their own separate line. Do not use pipes, tables, columns, or inline separators.
+Contact details must appear immediately below the candidate title using exactly one field per line.
+
+Use these labels when the corresponding information exists:
+
+Email: candidate email
+Phone: candidate phone number
+Location: candidate location
+GitHub: candidate GitHub URL
+PyPI: candidate PyPI/project URL
+LinkedIn: candidate LinkedIn URL
+Docs: candidate documentation URL
+
+Example:
+
+# Sara Czasak
+
+Python Developer
+
+Email: sara.p.czasak.m@gmail.com
+Phone: +48 692 948 897
+Location: Krakow, Poland
+GitHub: github.com/sara-czasak
+PyPI: pypi.org/project/py-simple-wrap
+LinkedIn: linkedin.com/in/example
+Docs: github.com/example/project
+
+Every contact field must be on its own line.
+Never combine multiple contact fields on the same line.
+Never place GitHub, PyPI, LinkedIn, or Docs URLs together on one line.
+Do not use pipes, tables, columns, bullets, or inline separators in the contact block.
+Only include contact fields that exist in the base CV.
 
 ## Summary
 
@@ -64,7 +94,9 @@ Dates, if present
 
 Formatting requirements:
 - The candidate's name must be the only text in the H1 heading.
-- Never place the candidate's name, contact information, or title on the same line.
+- The candidate's name must be on its own line.
+- The candidate's title must be on its own line.
+- Every individual contact field must be on its own line and must use its appropriate label: Email, Phone, Location, GitHub, PyPI, LinkedIn, or Docs.
 - Use H2 headings for CV sections.
 - Use H3 headings for job titles and education qualifications.
 - Employer, location, and dates must each be on separate lines.
