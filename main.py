@@ -3,12 +3,23 @@ import webbrowser
 from tkinter import Tk, filedialog
 import py_simple as ps
 from form.app import app, submitted_event
+import os
+from dotenv import load_dotenv
 
+
+load_dotenv()
+
+# STEP 1: GET NEEDED DATA
 def open_browser():
     webbrowser.open("http://127.0.0.1:5000")
 
 def run_server():
     app.run(port=5000, use_reloader=False)
+
+
+# STEP 2: COMPATIBILITY CHECK
+API_KEY = os.getenv("API_KEY")
+
 
 if __name__ == "__main__":
     server_thread = threading.Thread(target=run_server, daemon=True)
