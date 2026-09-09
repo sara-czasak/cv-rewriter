@@ -1,6 +1,11 @@
+import os
+import re
+import threading
 from flask import Flask, request
-import py_simple as ps
+
 app = Flask(__name__)
+submitted_event = threading.Event()
+submitted_path = None  # <-- set once the form is saved, so main.py can read it back
 
 FIELDS = [
     ("job_title", "Job Title", True),
@@ -25,17 +30,18 @@ def form():
 
     if request.method == "POST":
         data = {key: request.form.get(key, "").strip() for key, _, _ in FIELDS}
-        filename = f"{ps.to_snake_case(data['job_title'])}.md"
+
         for key, label, required in FIELDS:
             if required and not data[key]:
                 errors.append(label)
 
         if not errors:
-            save_to_file(data, filename)
+            global submitted_path
+            submitted_path = save_to_file(data)
+            submitted_event.set()
             return "Saved! You can close this tab."
 
     return render_form(data, errors)
-
 
 def render_form(data, errors):
     error_html = ""
@@ -56,12 +62,22 @@ def render_form(data, errors):
 
     return f"{error_html}<form method='post'>{inputs}<button type='submit'>Save</button></form>"
 
+def slugify(text):
+    text = text.lower().strip()
+    text = re.sub(r"[^a-z0-9]+", "-", text)
+    return text.strip("-")
 
-def save_to_file(data, filename):
-    with open(filename, "w", encoding="utf-8") as f:
+def save_to_file(data):
+    os.makedirs("jobs", exist_ok=True)
+
+    slug = f"{slugify(data['company_name'])}-{slugify(data['job_title'])}"
+    filepath = os.path.join("jobs", f"{slug}.md")
+
+    with open(filepath, "w", encoding="utf-8") as f:
         for key, label, _ in FIELDS:
             f.write(f"## {label}\n{data[key]}\n\n")
 
+    return filepath
 
 if __name__ == "__main__":
     app.run(debug=True, port=5000)
