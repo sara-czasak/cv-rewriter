@@ -56,7 +56,67 @@ def save_cv_as_pdf(cv_text: str, job_posting_text: str, applicant_name: str,
     filename = f"{applicant_name}_cv{company}.pdf"
     output_path = os.path.join(output_dir, filename)
 
-    html = markdown.markdown(cv_text)
+    body_html = markdown.markdown(cv_text)
+
+    html = f"""
+    <html>
+    <head>
+    <style>
+        @page {{
+            size: A4;
+            margin: 16mm 18mm;
+        }}
+
+        body {{
+            font-family: Helvetica, Arial, sans-serif;
+            font-size: 9.5pt;
+            line-height: 1.3;
+            color: #000000;
+        }}
+
+        h1 {{
+            font-size: 18pt;
+            margin: 0 0 4px 0;
+            padding: 0;
+            font-weight: bold;
+        }}
+
+        h2 {{
+            font-size: 11pt;
+            margin: 12px 0 5px 0;
+            padding: 0 0 2px 0;
+            font-weight: bold;
+            border-bottom: 0.5px solid #000000;
+        }}
+
+        h3 {{
+            font-size: 10pt;
+            margin: 7px 0 1px 0;
+            padding: 0;
+            font-weight: bold;
+        }}
+
+        p {{
+            margin: 1px 0 3px 0;
+            padding: 0;
+        }}
+
+        ul {{
+            margin: 2px 0 5px 14px;
+            padding: 0;
+        }}
+
+        li {{
+            margin: 0 0 2px 0;
+            padding: 0;
+        }}
+    </style>
+    </head>
+    <body>
+    {body_html}
+    </body>
+    </html>
+    """
 
     with open(output_path, "wb") as f:
         pisa_status = pisa.CreatePDF(html, dest=f)
