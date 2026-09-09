@@ -87,12 +87,12 @@ result = ir.run_review(flash, flash_lite, job_posting_text, base_cv_text, initia
 
 if result["status"] == "approved":
     print("Passed")
-    print(result["cv"])
-else:
-    print(f"Needs manual review: {result['reason']}")
-    print(result["cv"])
-
-
-if result["status"] == "approved":
     pdf_path = save_cv_as_pdf(result["cv"], job_posting_text, applicant_name)
     print(f"Saved to: {pdf_path}")
+else:
+    print(f"Needs manual review: {result['reason']}")
+    pdf_path = save_cv_as_pdf(
+        result["cv"], job_posting_text, applicant_name,
+        output_dir="cv_to_review",
+    )
+    print(f"Saved for manual review to: {pdf_path}")

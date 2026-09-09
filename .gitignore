@@ -18,3 +18,7 @@ dist/
 build/
 *.egg-info/
 .claude-code-gui
+
+cv_to_review/
+jobs/
+optimized_cv/
