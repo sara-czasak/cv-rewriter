@@ -13,6 +13,21 @@ submitted_job_url = None
 submitted_applicant_name = None
 submitted_company_name = None
 
+def reset_submission():
+    global submitted_path
+    global submitted_job_text
+    global submitted_job_url
+    global submitted_applicant_name
+    global submitted_company_name
+
+    submitted_path = None
+    submitted_job_text = None
+    submitted_job_url = None
+    submitted_applicant_name = None
+    submitted_company_name = None
+
+    submitted_event.clear()
+
 INPUT_MODES = [
     ("paste", "Paste Job Description"),
     ("url", "Job Posting URL"),

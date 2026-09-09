@@ -75,21 +75,7 @@ server_thread.start()
 
 threading.Timer(1, open_browser).start()
 
-submitted_event.wait()
 
-job_posting_path = form_app.submitted_path
-job_posting_text = form_app.submitted_job_text
-job_posting_url = form_app.submitted_job_url
-applicant_name = form_app.submitted_applicant_name
-
-if job_posting_url:
-    print(f"Job posting URL received: {job_posting_url}")
-
-elif job_posting_text:
-    print("Job posting text received directly.")
-
-else:
-    print(f"Job posting saved to: {job_posting_path}")
 
 root = Tk()
 root.withdraw()
@@ -111,110 +97,126 @@ if base_cv:
 else:
     print("No file selected.")
 
+while True:
+    submitted_event.wait()
 
-API_KEY = os.getenv("API_KEY")
+    job_posting_path = form_app.submitted_path
+    job_posting_text = form_app.submitted_job_text
+    job_posting_url = form_app.submitted_job_url
+    applicant_name = form_app.submitted_applicant_name
 
-flash_lite = ps.get_model(
-    provider = "google",
-    model_name = "gemini-3.5-flash-lite",
-    api_key=API_KEY
-)
+    if job_posting_url:
+        print(f"Job posting URL received: {job_posting_url}")
+    elif job_posting_text:
+        print("Job posting text received directly.")
+    else:
+        print(f"Job posting saved to: {job_posting_path}")
 
-flash = ps.get_model(
-    provider = "google",
-    model_name="gemini-3.5-flash",
-    api_key=API_KEY
-)
 
-if job_posting_url:
-    job_posting_text = fetch_job_posting_text(job_posting_url)
-    job_posting_text = normalize_job.normalize_job(
-        flash_lite,
-        job_posting_text,
+    API_KEY = os.getenv("API_KEY")
+
+    flash_lite = ps.get_model(
+        provider = "google",
+        model_name = "gemini-3.5-flash-lite",
+        api_key=API_KEY
     )
 
-    meaningful_job_text = re.sub(
-        r"##\s+[^\n]+\n",
-        "",
-        job_posting_text,
-    ).strip()
+    flash = ps.get_model(
+        provider = "google",
+        model_name="gemini-3.5-flash",
+        api_key=API_KEY
+    )
 
-    if len(meaningful_job_text) < 200:
-        print(
-            "\nCould not extract enough job information from this URL."
-            "\nSome sites, including LinkedIn, block automated job-page reading."
-            "\nPlease restart the app and use 'Paste Job Description' instead.\n"
+    if job_posting_url:
+        job_posting_text = fetch_job_posting_text(job_posting_url)
+        job_posting_text = normalize_job.normalize_job(
+            flash_lite,
+            job_posting_text,
         )
-        raise SystemExit
 
-elif job_posting_text:
-    job_posting_text = normalize_job.normalize_job(
+        meaningful_job_text = re.sub(
+            r"##\s+[^\n]+\n",
+            "",
+            job_posting_text,
+        ).strip()
+
+        if len(meaningful_job_text) < 200:
+            print(
+                "\nCould not extract enough job information from this URL."
+                "\nSome sites, including LinkedIn, block automated job-page reading."
+                "\nPlease restart the app and use 'Paste Job Description' instead.\n"
+            )
+            raise SystemExit
+
+    elif job_posting_text:
+        job_posting_text = normalize_job.normalize_job(
+            flash_lite,
+            job_posting_text,
+        )
+
+    else:
+        with open(job_posting_path, "r", encoding="utf-8") as f:
+            job_posting_text = f.read()
+
+    raw_base_cv_text = extract_text(base_cv.name)
+
+    normalized_cv = normalize_cv.normalize_cv(
+        flash_lite,
+        raw_base_cv_text,
+    )
+    base_cv_text = normalize_cv.cv_to_text(normalized_cv)
+
+
+    result = cc.check_compatibility(flash_lite, job_posting_text, base_cv_text)
+
+    print(f"Compatibility score: {result['final_score']}")
+    print(f"Reasoning: {result['reasoning']}")
+    print(f"Decision: {result['decision']}")
+
+    if result["decision"] == "reject":
+        print("\nThis job does not look compatible with the current CV.")
+        print(f"Reason: {result['reasoning']}")
+
+        try_another = input(
+            "\nWould you like to check against another job? (y/n): "
+        ).strip().lower()
+
+        if try_another in ("y", "yes"):
+            form_app.reset_submission()
+            open_browser()
+            print("Waiting for another job posting...")
+            continue
+        else:
+            print("Stopped.")
+            raise SystemExit
+
+    if result["decision"] == "ask_user":
+        user_choice = input(
+            "Compatibility is borderline. Do you want to continue? (y/n): "
+        ).strip().lower()
+
+        if user_choice not in ("y", "yes"):
+            print("Stopped by user.")
+            raise SystemExit
+
+    initial_score = result["final_score"]
+
+    result = ir.run_review(
+        flash,
         flash_lite,
         job_posting_text,
+        base_cv_text,
+        initial_score,
     )
 
-else:
-    with open(job_posting_path, "r", encoding="utf-8") as f:
-        job_posting_text = f.read()
-
-raw_base_cv_text = extract_text(base_cv.name)
-
-normalized_cv = normalize_cv.normalize_cv(
-    flash_lite,
-    raw_base_cv_text,
-)
-base_cv_text = normalize_cv.cv_to_text(normalized_cv)
-
-
-result = cc.check_compatibility(flash_lite, job_posting_text, base_cv_text)
-
-print(f"Compatibility score: {result['final_score']}")
-print(f"Reasoning: {result['reasoning']}")
-print(f"Decision: {result['decision']}")
-
-if result["decision"] == "reject":
-    print("\nThis job does not look compatible with the current CV.")
-    print(f"Reason: {result['reasoning']}")
-
-    try_another = input(
-        "\nWould you like to check against another job? (y/n): "
-    ).strip().lower()
-
-    if try_another in ("y", "yes"):
-        print("Please restart the app to submit another job posting.")
-        raise SystemExit
-
-    print("Stopped.")
-    raise SystemExit
-
-
-if result["decision"] == "ask_user":
-    user_choice = input(
-        "Compatibility is borderline. Do you want to continue? (y/n): "
-    ).strip().lower()
-
-    if user_choice not in ("y", "yes"):
-        print("Stopped by user.")
-        raise SystemExit
-
-initial_score = result["final_score"]
-
-result = ir.run_review(
-    flash,
-    flash_lite,
-    job_posting_text,
-    base_cv_text,
-    initial_score,
-)
-
-if result["status"] == "approved":
-    print("Passed")
-    pdf_path = save_cv_as_pdf(result["cv"], job_posting_text, applicant_name)
-    print(f"Saved to: {pdf_path}")
-else:
-    print(f"Needs manual review: {result['reason']}")
-    pdf_path = save_cv_as_pdf(
-        result["cv"], job_posting_text, applicant_name,
-        output_dir="cv_to_review",
-    )
-    print(f"Saved for manual review to: {pdf_path}")
+    if result["status"] == "approved":
+        print("Passed")
+        pdf_path = save_cv_as_pdf(result["cv"], job_posting_text, applicant_name)
+        print(f"Saved to: {pdf_path}")
+    else:
+        print(f"Needs manual review: {result['reason']}")
+        pdf_path = save_cv_as_pdf(
+            result["cv"], job_posting_text, applicant_name,
+            output_dir="cv_to_review",
+        )
+        print(f"Saved for manual review to: {pdf_path}")
