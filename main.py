@@ -1,5 +1,8 @@
 import threading
 import webbrowser
+import html
+import re
+from urllib.request import Request, urlopen
 from tkinter import Tk, filedialog
 import py_simple as ps
 from form.app import app, submitted_event
@@ -22,6 +25,24 @@ def run_server():
     app.run(port=5000, use_reloader=False)
 
 
+def fetch_job_posting_text(url):
+    request = Request(
+        url,
+        headers={"User-Agent": "Mozilla/5.0"},
+    )
+
+    with urlopen(request, timeout=20) as response:
+        page_html = response.read().decode("utf-8", errors="ignore")
+
+    page_html = re.sub(r"<script.*?>.*?</script>", " ", page_html, flags=re.S | re.I)
+    page_html = re.sub(r"<style.*?>.*?</style>", " ", page_html, flags=re.S | re.I)
+    page_text = re.sub(r"<[^>]+>", "\n", page_html)
+    page_text = html.unescape(page_text)
+    page_text = re.sub(r"\n\s*\n+", "\n\n", page_text)
+
+    return page_text.strip()
+
+
 server_thread = threading.Thread(target=run_server, daemon=True)
 server_thread.start()
 
@@ -30,8 +51,14 @@ threading.Timer(1, open_browser).start()
 submitted_event.wait()
 
 job_posting_path = form_app.submitted_path
+job_posting_text = form_app.submitted_job_text
+job_posting_url = form_app.submitted_job_url
 applicant_name = form_app.submitted_applicant_name
-print(f"Job posting saved to: {job_posting_path}")
+
+if job_posting_text:
+    print("Job posting received directly from form.")
+else:
+    print(f"Job posting saved to: {job_posting_path}")
 
 root = Tk()
 root.withdraw()
@@ -68,8 +95,12 @@ flash = ps.get_model(
     api_key=API_KEY
 )
 
-with open(job_posting_path, "r", encoding="utf-8") as f:
-    job_posting_text = f.read()
+if job_posting_url:
+    job_posting_text = fetch_job_posting_text(job_posting_url)
+
+elif not job_posting_text:
+    with open(job_posting_path, "r", encoding="utf-8") as f:
+        job_posting_text = f.read()
 
 raw_base_cv_text = extract_text(base_cv.name)
 
