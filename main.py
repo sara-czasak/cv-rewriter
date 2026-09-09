@@ -144,9 +144,13 @@ while True:
             print(
                 "\nCould not extract enough job information from this URL."
                 "\nSome sites, including LinkedIn, block automated job-page reading."
-                "\nPlease restart the app and use 'Paste Job Description' instead.\n"
+                "\nPlease use 'Paste Job Description' instead.\n"
             )
-            raise SystemExit
+
+            form_app.reset_submission()
+            open_browser()
+            print("Waiting for another job posting...")
+            continue
 
     elif job_posting_text:
         job_posting_text = normalize_job.normalize_job(
@@ -220,3 +224,16 @@ while True:
             output_dir="cv_to_review",
         )
         print(f"Saved for manual review to: {pdf_path}")
+
+    try_another = input(
+        "\nWould you like to optimize another CV for another job? (y/n): "
+    ).strip().lower()
+
+    if try_another in ("y", "yes"):
+        form_app.reset_submission()
+        open_browser()
+        print("Waiting for another job posting...")
+        continue
+
+    print("Finished.")
+    break
